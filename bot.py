@@ -1,3 +1,22 @@
+Ety- 795419275682775091
+Pland- 270160645972951050
+Div- 583947955078299664
+Rei- 1354019996598145044
+Asta- 744234018307964948
+Dead- 730783860408844370
+Oray- 1188184263007424515
+Ted- 1227662362501316731
+idk10- 1454892617853829425
+Idk9- 1211831750012182589
+gerald- 1151847854281871411
+mehak- 966437551420350555
+lisa- 932251055272632359
+vet- 1204861281174167574
+
+
+
+
+
 import discord
 import os
 import re
@@ -53,10 +72,10 @@ async def on_message(message):
     if message.author.bot:
         return
 
-    if not message.content.strip():
+    if not message.content:
         return
 
-    # Ignore links
+    # Ignore messages with links
     if re.search(r"(https?://\S+)", message.content):
         return
 
@@ -65,33 +84,33 @@ async def on_message(message):
 
     modified = rewrite(message.content, style)
 
+    # Get / create webhook
+    webhooks = await message.channel.webhooks()
+    webhook = None
+
+    for wh in webhooks:
+        if wh.user == client.user:
+            webhook = wh
+            break
+
+    if webhook is None:
+        webhook = await message.channel.create_webhook(name="Mimic Bot")
+
+    # Send as reply
+    await webhook.send(
+    content=modified,
+    username=message.author.display_name,
+    avatar_url=message.author.display_avatar.url
+)
+
+
+    # Delete original
     try:
-        # Get / create webhook
-        webhooks = await message.channel.webhooks()
-        webhook = None
-
-        for wh in webhooks:
-            if wh.user == client.user:
-                webhook = wh
-                break
-
-        if webhook is None:
-            webhook = await message.channel.create_webhook(name="Mimic Bot")
-
-        # Send as reply (safe)
-        await webhook.send(
-            content=modified,
-            username=message.author.display_name,
-            avatar_url=message.author.display_avatar.url,
-            allowed_mentions=discord.AllowedMentions(replied_user=False),
-            reference=message.to_reference(fail_if_not_exists=False)
-        )
-
-        # Delete original
         await message.delete()
-
-    except Exception as e:
-        print("Webhook error:", e)
+    except discord.Forbidden:
+        pass
+    except discord.NotFound:
+        pass
 
 
 # ====== Run ======
