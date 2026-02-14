@@ -15,29 +15,57 @@ intents.messages = True
 
 client = discord.Client(intents=intents)
 
+RANDOM_WORDS = [
+    "Rei",
+    "Ety",
+    "Pland",
+    "Asta",
+    "Deadshot",
+    "Oso",
+    "Teddy",
+    "Gerald",
+    "Lisa",
+    "Anna",
+    "Ciri",
+    "Crispy",
+    "Nope",
+    "Gabe",
+    "Gee",
+    "Mimi",
+    "Ezra",
+    "Tj",
+    "Vet",
+    "Tommy",
+    "Adele",
+    "Div",
+    "Mehak",
+    "Det",
+    "Crispy",
+    "Crispy"
+]
+
 # ====== User Styles (EDIT THESE) ======
 USER_STYLES = {
-    350816662917873664: "uwu"
-    # Example:
-    # 123456789012345678: "uwu",
-    # 987654321098765432: "pirate"
+    350816662917873664: "amazeorbs"
+    795419275682775091: "amazeorbs"
+    
 }
 
 # ====== Rewrite Engine ======
 def rewrite(text, style):
 
-    if style == "uwu":
-        text = text.replace("r", "w").replace("l", "w")
-        return text + " owo 💕"
+    if style == "amazeorbs":
+        return "".join(random.choice([c.upper(), c.lower()]) for c in text) + "\n# AND I LOVE amazeorbs :amazeorbs:""
 
-    elif style == "pirate":
-        return "Arrr! " + text + " ☠️"
+else:
+    # 1. Scramble text
+    scrambled = "".join(random.choice([c.upper(), c.lower()]) for c in text)
 
-    elif style == "sarcastic":
-        return f"Oh really? {text} 🙄"
+    # 2. Pick random name
+    name = random.choice(RANDOM_NAMES)
 
-    else:
-        return "".join(random.choice([c.upper(), c.lower()]) for c in text) + " # AND I LOVE EVENT"
+    # 3. Combine
+    return f"{scrambled} \n# And I love {name}"
 
 
 # ====== Ready ======
