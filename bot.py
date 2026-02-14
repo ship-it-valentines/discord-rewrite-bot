@@ -68,7 +68,10 @@ async def on_message(message):
         style = USER_STYLES.get(original.author.id, "default")
 
         # Rewrite the original message
-        modified = rewrite(original.content, style)
+        rewritten = rewrite(original.content, style)
+
+        # Format as a quote using Markdown
+        modified = f"> {original.content}\n\n{rewritten}"
 
         # Get or create webhook
         webhooks = await message.channel.webhooks()
@@ -78,24 +81,4 @@ async def on_message(message):
                 webhook = wh
                 break
         if webhook is None:
-            webhook = await message.channel.create_webhook(name="Mimic Bot")
-
-        # Send rewritten message as a reply
-        await webhook.send(
-            content=modified,
-            username=original.author.display_name,
-            avatar_url=original.author.display_avatar.url,
-            reference=original,  # make it look like a reply
-            mention_author=False
-        )
-
-        # Optionally delete the command message (!quote)
-        try:
-            await message.delete()
-        except discord.Forbidden:
-            pass
-        except discord.NotFound:
-            pass
-
-# ====== Run ======
-client.run(TOKEN)
+            webhook = await
