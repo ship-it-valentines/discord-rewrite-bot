@@ -1,53 +1,95 @@
 import discord
 import os
-import asyncio
+import random
 
-# ======= Environment Variable =======
-TOKEN = os.getenv("TOKEN")  # Must match Railway variable
+# ====== Token ======
+TOKEN = os.getenv("TOKEN")
 
-if TOKEN is None:
-    raise ValueError("DISCORD_TOKEN environment variable not set!")
+if not TOKEN:
+    raise ValueError("DISCORD_TOKEN is not set in Railway variables!")
 
-# ======= Intents =======
+# ====== Intents ======
 intents = discord.Intents.default()
 intents.message_content = True
 intents.messages = True
 
 client = discord.Client(intents=intents)
 
-# ======= Events =======
+# ====== User Styles (EDIT THESE) ======
+USER_STYLES = {
+    350816662917873664: "uwu"
+    # Example:
+    # 123456789012345678: "uwu",
+    # 987654321098765432: "pirate"
+}
+
+# ====== Rewrite Engine ======
+def rewrite(text, style):
+
+    if style == "uwu":
+        text = text.replace("r", "w").replace("l", "w")
+        return text + " owo 💕"
+
+    elif style == "pirate":
+        return "Arrr! " + text + " ☠️"
+
+    elif style == "sarcastic":
+        return f"Oh really? {text} 🙄"
+
+    else style == "chaos":
+        return "".join(random.choice([c.upper(), c.lower()]) for c in text) + " # AND I LOVE EVENT"
+
+
+# ====== Ready ======
 @client.event
 async def on_ready():
     print(f"Bot online as {client.user} ✅")
 
+
+# ====== Message Handler ======
 @client.event
 async def on_message(message):
+
+    if message.author.bot:
+        return
+
+    if not message.content:
+        return
+
+    user_id = message.author.id
+
+    # Get user's style
+    style = USER_STYLES.get(user_id, "default")
+
+    # Rewrite
+    modified = rewrite(message.content, style)
+
+    # Get / Create Webhook
+    webhooks = await message.channel.webhooks()
+
+    webhook = None
+
+    for wh in webhooks:
+        if wh.user == client.user:
+            webhook = wh
+            break
+
+    if webhook is None:
+        webhook = await message.channel.create_webhook(name="Mimic Bot")
+
+    # Send as user
+    await webhook.send(
+        content=modified,
+        username=message.author.display_name,
+        avatar_url=message.author.display_avatar.url
+    )
+
+    # Delete original
     try:
-        # Ignore bot's own messages
-        if message.author == client.user:
-            return
+        await message.delete()
+    except:
+        pass
 
-        # Ignore empty messages
-        if not message.content:
-            return
 
-        # DELETE original message (bot needs Manage Messages permission)
-        try:
-            await message.delete()
-        except discord.Forbidden:
-            print(f"Cannot delete message from {message.author}")
-        except discord.NotFound:
-            pass  # message already deleted
-
-        # MODIFY message
-        modified = message.content.upper() + " 😎"
-
-        # Send modified message
-        await message.channel.send(f"{message.author.name}: {modified}")
-
-    except Exception as e:
-        print(f"Error in on_message: {e}")
-
-# ======= Run Bot =======
+# ====== Run ======
 client.run(TOKEN)
-
