@@ -52,7 +52,7 @@ async def on_message(message):
 
     # Get style and scrambled content
     style = USER_STYLES.get(message.author.id, "default")
-    modified_content = rewrite(message.content, style)
+    scrambled_text = rewrite(message.content, style)
 
     # ====== Webhook handling ======
     webhooks = await message.channel.webhooks()
@@ -64,36 +64,46 @@ async def on_message(message):
     if webhook is None:
         webhook = await message.channel.create_webhook(name="Mimic Bot")
 
-    # ====== Reply simulation with first-line quote ======
+    # ====== Reply embed ======
+    embed = None
     replied_msg = message.reference.resolved if message.reference and isinstance(message.reference.resolved, discord.Message) else None
     if replied_msg:
         replied_author = replied_msg.author
-        mention = f"<@{replied_author.id}>"
-
-        # Only take the first line
+        # Take only the first line
         original_text = str(replied_msg.content).splitlines()[0] if replied_msg.content else ""
-
-        # Truncate if too long
         if len(original_text) > 200:
             original_text = original_text[:200] + "..."
 
-        # Make a neat blockquote
-        quote_text = f"> {original_text}"
-        modified_content = f"{replied_author.display_name} said:\n{quote_text}\n\n{modified_content}"
+        embed = discord.Embed(
+            description=scrambled_text,
+            color=discord.Color.blurple()
+        )
+        embed.set_author(
+            name=f"{replied_author.display_name} said:",
+            icon_url=replied_author.display_avatar.url
+        )
 
     # ====== Send message via webhook ======
     try:
-        await webhook.send(
-            content=modified_content,
-            username=message.author.display_name,
-            avatar_url=message.author.display_avatar.url,
-            allowed_mentions=discord.AllowedMentions.none()
-        )
+        if embed:
+            await webhook.send(
+                embed=embed,
+                username=message.author.display_name,
+                avatar_url=message.author.display_avatar.url,
+                allowed_mentions=discord.AllowedMentions.none()
+            )
+        else:
+            await webhook.send(
+                content=scrambled_text,
+                username=message.author.display_name,
+                avatar_url=message.author.display_avatar.url,
+                allowed_mentions=discord.AllowedMentions.none()
+            )
     except Exception as e:
         print(f"Webhook send failed: {e}")
-        # fallback: send without quote
+        # fallback: send without embed
         await webhook.send(
-            content=modified_content,
+            content=scrambled_text,
             username=message.author.display_name,
             avatar_url=message.author.display_avatar.url,
             allowed_mentions=discord.AllowedMentions.none()
