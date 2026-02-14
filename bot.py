@@ -57,8 +57,8 @@ async def on_message(message):
         return
 
     # Ignore messages with links
-    if re.search(r"(https?://\S+)", message.content):
-        return
+    #if re.search(r"(https?://\S+)", message.content):
+    #    return
 
     user_id = message.author.id
     style = USER_STYLES.get(user_id, "default")
