@@ -4,7 +4,7 @@ import re
 import random
 
 # ====== Token ======
-TOKEN = os.getenv("TOKEN")
+TOKEN = os.getenv("DISCORD_TOKEN")
 if not TOKEN:
     raise ValueError("DISCORD_TOKEN environment variable is not set!")
 
@@ -50,7 +50,7 @@ async def on_message(message):
     if re.search(r"(https?://\S+)", message.content):
         return
 
-    # Get style and scrambled reply
+    # ====== Scramble the reply ======
     style = USER_STYLES.get(message.author.id, "default")
     scrambled_text = rewrite(message.content, style)
 
@@ -64,12 +64,11 @@ async def on_message(message):
     if webhook is None:
         webhook = await message.channel.create_webhook(name="Mimic Bot")
 
-    # ====== Prepare embed for the message being replied to ======
-    embed = None
+    # ====== If replying, send embed first ======
     replied_msg = message.reference.resolved if message.reference and isinstance(message.reference.resolved, discord.Message) else None
     if replied_msg:
         replied_author = replied_msg.author
-        # Only take the first line for neatness
+        # Only take first line of the original message
         original_text = str(replied_msg.content).splitlines()[0] if replied_msg.content else ""
         if len(original_text) > 200:
             original_text = original_text[:200] + "..."
@@ -83,33 +82,21 @@ async def on_message(message):
             icon_url=replied_author.display_avatar.url
         )
 
-    # ====== Send message via webhook ======
-    try:
-        if embed:
-            # Your scrambled reply is outside of the embed
-            await webhook.send(
-                content=scrambled_text,
-                embed=embed,
-                username=message.author.display_name,
-                avatar_url=message.author.display_avatar.url,
-                allowed_mentions=discord.AllowedMentions.none()
-            )
-        else:
-            await webhook.send(
-                content=scrambled_text,
-                username=message.author.display_name,
-                avatar_url=message.author.display_avatar.url,
-                allowed_mentions=discord.AllowedMentions.none()
-            )
-    except Exception as e:
-        print(f"Webhook send failed: {e}")
-        # fallback: send only the scrambled reply
+        # Send the embed first
         await webhook.send(
-            content=scrambled_text,
+            embed=embed,
             username=message.author.display_name,
             avatar_url=message.author.display_avatar.url,
             allowed_mentions=discord.AllowedMentions.none()
         )
+
+    # ====== Send scrambled reply as a normal message below the embed ======
+    await webhook.send(
+        content=scrambled_text,
+        username=message.author.display_name,
+        avatar_url=message.author.display_avatar.url,
+        allowed_mentions=discord.AllowedMentions.none()
+    )
 
     # ====== Delete original message ======
     try:
