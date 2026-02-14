@@ -74,13 +74,15 @@ async def on_message(message):
         webhook = await message.channel.create_webhook(name="Mimic Bot")
 
     # ---- Send via webhook ----
-await webhook.send(
-    content=modified,
-    username=message.author.display_name,
-    avatar_url=message.author.display_avatar.url,
-    allowed_mentions=discord.AllowedMentions(replied_user=False),
-    reference=message.to_reference()
-)
+    # ---- Send via webhook ----
+    await webhook.send(
+        content=modified,
+        username=message.author.display_name,
+        avatar_url=message.author.display_avatar.url,
+        allowed_mentions=discord.AllowedMentions(replied_user=False),
+        reference=message.to_reference()
+    )
+
 
     # ---- Delete original ----
     try:
