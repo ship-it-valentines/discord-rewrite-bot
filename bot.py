@@ -57,8 +57,8 @@ async def on_message(message):
         return
 
     # Ignore messages with links
-    #if re.search(r"(https?://\S+)", message.content):
-    #    return
+    if re.search(r"(https?://\S+)", message.content):
+        return
 
     user_id = message.author.id
     style = USER_STYLES.get(user_id, "default")
@@ -79,12 +79,13 @@ async def on_message(message):
 
     # Send as reply
     await webhook.send(
-        content=modified,
-        username=message.author.display_name,
-        avatar_url=message.author.display_avatar.url,
-        allowed_mentions=discord.AllowedMentions(replied_user=False),
-        reference=message.to_reference()
-    )
+            content=modified,
+            username=message.author.display_name,
+            avatar_url=message.author.display_avatar.url,
+            allowed_mentions=discord.AllowedMentions(replied_user=False),
+            reference=message.to_reference(fail_if_not_exists=False)
+        )
+
 
     # Delete original
     try:
