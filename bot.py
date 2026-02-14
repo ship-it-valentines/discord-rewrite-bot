@@ -46,7 +46,7 @@ RANDOM_WORDS = [
 
 # ====== User Styles (EDIT THESE) ======
 USER_STYLES = {
-    350816662917873664: "amazeorbs"
+    350816662917873664: "amazeorbs",
     795419275682775091: "amazeorbs"
     
 }
