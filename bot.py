@@ -64,21 +64,22 @@ async def on_message(message):
     if webhook is None:
         webhook = await message.channel.create_webhook(name="Mimic Bot")
 
-    # ====== Reply simulation with neat quote ======
-    if message.reference and isinstance(message.reference.resolved, discord.Message):
-        replied_msg = message.reference.resolved
+    # ====== Reply simulation with first-line quote ======
+    replied_msg = message.reference.resolved if message.reference and isinstance(message.reference.resolved, discord.Message) else None
+    if replied_msg:
         replied_author = replied_msg.author
         mention = f"<@{replied_author.id}>"
-        
-        # Truncate original message for neatness
-        original_text = replied_msg.content
+
+        # Only take the first line
+        original_text = str(replied_msg.content).splitlines()[0] if replied_msg.content else ""
+
+        # Truncate if too long
         if len(original_text) > 200:
             original_text = original_text[:200] + "..."
-        
-        # Make a clean blockquote
-        quote_lines = [f"> {line}" for line in original_text.splitlines()]
-        quote_text = "\n".join(quote_lines)
-        modified_content = f"{mention} | {replied_author.display_name} said:\n{quote_text}\n{modified_content}"
+
+        # Make a neat blockquote
+        quote_text = f"> {original_text}"
+        modified_content = f"{replied_author.display_name} said:\n{quote_text}\n{modified_content}"
 
     # ====== Send message via webhook ======
     try:
