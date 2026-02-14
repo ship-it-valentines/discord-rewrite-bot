@@ -1,5 +1,6 @@
 import discord
 import os
+import re
 import random
 
 # ====== Token ======
@@ -14,6 +15,21 @@ intents.message_content = True
 intents.messages = True
 
 client = discord.Client(intents=intents)
+
+@client.event
+async def on_message(message):
+    # Ignore bots
+    if message.author.bot:
+        return
+
+    # Ignore empty messages
+    if not message.content:
+        return
+
+    # ===== Ignore messages with links =====
+    if re.search(r"(https?://\S+)", message.content):
+        return  # stop processing this message
+
 
 RANDOM_NAMES = [
     "Rei",
