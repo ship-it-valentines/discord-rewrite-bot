@@ -79,12 +79,10 @@ async def on_message(message):
 
     # Send as reply
     await webhook.send(
-            content=modified,
-            username=message.author.display_name,
-            avatar_url=message.author.display_avatar.url,
-            allowed_mentions=discord.AllowedMentions(replied_user=False),
-            reference=message.to_reference(fail_if_not_exists=False)
-        )
+    content=modified,
+    username=message.author.display_name,
+    avatar_url=message.author.display_avatar.url
+)
 
 
     # Delete original
