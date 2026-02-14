@@ -4,7 +4,7 @@ import re
 import random
 
 # ====== Token ======
-TOKEN = os.getenv("TOKEN")
+TOKEN = os.getenv("DISCORD_TOKEN")
 if not TOKEN:
     raise ValueError("DISCORD_TOKEN environment variable is not set!")
 
@@ -53,10 +53,10 @@ async def on_message(message):
     if message.author.bot:
         return
 
-    if not message.content:
+    if not message.content.strip():
         return
 
-    # Ignore messages with links
+    # Ignore links
     if re.search(r"(https?://\S+)", message.content):
         return
 
@@ -65,33 +65,33 @@ async def on_message(message):
 
     modified = rewrite(message.content, style)
 
-    # Get / create webhook
-    webhooks = await message.channel.webhooks()
-    webhook = None
-
-    for wh in webhooks:
-        if wh.user == client.user:
-            webhook = wh
-            break
-
-    if webhook is None:
-        webhook = await message.channel.create_webhook(name="Mimic Bot")
-
-    # Send as reply
-    await webhook.send(
-    content=modified,
-    username=message.author.display_name,
-    avatar_url=message.author.display_avatar.url
-)
-
-
-    # Delete original
     try:
+        # Get / create webhook
+        webhooks = await message.channel.webhooks()
+        webhook = None
+
+        for wh in webhooks:
+            if wh.user == client.user:
+                webhook = wh
+                break
+
+        if webhook is None:
+            webhook = await message.channel.create_webhook(name="Mimic Bot")
+
+        # Send as reply (safe)
+        await webhook.send(
+            content=modified,
+            username=message.author.display_name,
+            avatar_url=message.author.display_avatar.url,
+            allowed_mentions=discord.AllowedMentions(replied_user=False),
+            reference=message.to_reference(fail_if_not_exists=False)
+        )
+
+        # Delete original
         await message.delete()
-    except discord.Forbidden:
-        pass
-    except discord.NotFound:
-        pass
+
+    except Exception as e:
+        print("Webhook error:", e)
 
 
 # ====== Run ======
