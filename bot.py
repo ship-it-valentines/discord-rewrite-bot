@@ -74,7 +74,7 @@ async def on_message(message):
         webhook = await message.channel.create_webhook(name="Mimic Bot")
 
     # ---- Send via webhook ----
-   await webhook.send(
+await webhook.send(
     content=modified,
     username=message.author.display_name,
     avatar_url=message.author.display_avatar.url,
