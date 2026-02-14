@@ -3,31 +3,22 @@ import os
 import re
 import random
 
-# ====== Token ======
-TOKEN = os.getenv("TOKEN")
-if not TOKEN:
-    raise ValueError("DISCORD_TOKEN environment variable is not set!")
+TOKEN = os.getenv("DISCORD_TOKEN")  # or replace with your token string for testing
 
-# ====== Intents ======
 intents = discord.Intents.default()
-intents.messages = True          # needed to receive messages
-intents.message_content = True   # needed to read message content
+intents.messages = True
+intents.message_content = True
 client = discord.Client(intents=intents)
 
-# ====== Random Names ======
-RANDOM_NAMES = [
-    "Rei", "Ety", "Pland", "Asta", "Deadshot", "Oso", "Teddy", "Gerald",
-    "Lisa", "Anna", "Ciri", "Crispy", "Nope", "Gabe", "Gee", "Mimi", "Ezra",
-    "Tj", "Vet", "Tommy", "Adele", "Div", "Mehak", "Det"
-]
+RANDOM_NAMES = ["Rei","Ety","Pland","Asta","Deadshot","Oso","Teddy","Gerald",
+                "Lisa","Anna","Ciri","Crispy","Nope","Gabe","Gee","Mimi","Ezra",
+                "Tj","Vet","Tommy","Adele","Div","Mehak","Det"]
 
-# ====== User Styles ======
 USER_STYLES = {
     350816662917873664: "amazeorbs",
     795419275682775091: "amazeorbs"
 }
 
-# ====== Rewrite Engine ======
 def rewrite(text, style):
     scrambled = "".join(random.choice([c.upper(), c.lower()]) for c in text)
     if style == "amazeorbs":
@@ -36,66 +27,57 @@ def rewrite(text, style):
         name = random.choice(RANDOM_NAMES)
         return f"{scrambled}\n# And I love {name}"
 
-# ====== Ready ======
 @client.event
 async def on_ready():
     print(f"Bot online as {client.user} ✅")
 
-# ====== Message Handler ======
 @client.event
 async def on_message(message):
-    # Debug print to see messages
-    print(f"Received message from {message.author}: {message.content}")
+    print(f"Received message from {message.author}: {message.content}")  # Debug
 
     if message.author.bot:
         return
-
     if not message.content:
         return
-
-    # Ignore messages with links
     if re.search(r"(https?://\S+)", message.content):
         return
 
-    user_id = message.author.id
-    style = USER_STYLES.get(user_id, "default")
-
-    # Only modify the new message
+    style = USER_STYLES.get(message.author.id, "default")
     modified_content = rewrite(message.content, style)
 
-    # Get / create webhook for this channel
-    webhooks = await message.channel.webhooks()
+    # Get or create webhook
     webhook = None
-    for wh in webhooks:
+    for wh in await message.channel.webhooks():
         if wh.user == client.user:
             webhook = wh
             break
     if webhook is None:
         webhook = await message.channel.create_webhook(name="Mimic Bot")
+        print(f"Created webhook {webhook.name} in {message.channel}")
 
-    # Prepare reference if message is a reply
+    # Handle reply reference
     reference = None
     if message.reference:
         try:
             referenced_message = await message.channel.fetch_message(message.reference.message_id)
             reference = referenced_message.to_reference()
         except (discord.NotFound, discord.Forbidden):
-            reference = None
+            print("Failed to fetch referenced message, sending without reference.")
 
-    # Send the modified message via webhook
+    # Send via webhook
+    print(f"Sending modified message: {modified_content}")  # Debug
     await webhook.send(
         content=modified_content,
         username=message.author.display_name,
         avatar_url=message.author.display_avatar.url,
         allowed_mentions=discord.AllowedMentions.none(),
-        reference=reference  # makes it a true reply if applicable
+        reference=reference
     )
 
-    # Delete the original message
+    # Delete original
     try:
         await message.delete()
     except (discord.Forbidden, discord.NotFound):
         pass
 
-# ====== Run ======
 client.run(TOKEN)
