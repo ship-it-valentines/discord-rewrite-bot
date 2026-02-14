@@ -79,7 +79,7 @@ async def on_message(message):
 
         # Make a neat blockquote
         quote_text = f"> {original_text}"
-        modified_content = f"{replied_author.display_name} said:\n{quote_text}\n{modified_content}"
+        modified_content = f"{replied_author.display_name} said:\n{quote_text}\n\n{modified_content}"
 
     # ====== Send message via webhook ======
     try:
