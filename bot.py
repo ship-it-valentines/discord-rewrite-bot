@@ -36,7 +36,7 @@ def rewrite(text, style):
     elif style == "sarcastic":
         return f"Oh really? {text} 🙄"
 
-    else style == "chaos":
+    else:
         return "".join(random.choice([c.upper(), c.lower()]) for c in text) + " # AND I LOVE EVENT"
 
 
