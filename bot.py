@@ -55,9 +55,9 @@ USER_STYLES = {
 def rewrite(text, style):
 
     if style == "amazeorbs":
-        return "".join(random.choice([c.upper(), c.lower()]) for c in text) + "\n# AND I LOVE amazeorbs :amazeorbs:"
+        return "".join(random.choice([c.upper(), c.lower()]) for c in text) + "\n# AND I LOVE amazeorbs :amazeorbs:",
 
-else:
+    else:
     # 1. Scramble text
     scrambled = "".join(random.choice([c.upper(), c.lower()]) for c in text)
 
