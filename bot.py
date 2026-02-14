@@ -1,22 +1,3 @@
-Ety- 795419275682775091
-Pland- 270160645972951050
-Div- 583947955078299664
-Rei- 1354019996598145044
-Asta- 744234018307964948
-Dead- 730783860408844370
-Oray- 1188184263007424515
-Ted- 1227662362501316731
-idk10- 1454892617853829425
-Idk9- 1211831750012182589
-gerald- 1151847854281871411
-mehak- 966437551420350555
-lisa- 932251055272632359
-vet- 1204861281174167574
-
-
-
-
-
 import discord
 import os
 import re
@@ -49,7 +30,6 @@ USER_STYLES = {
 
 # ====== Rewrite Engine ======
 def rewrite(text, style):
-
     scrambled = "".join(random.choice([c.upper(), c.lower()]) for c in text)
 
     if style == "amazeorbs":
@@ -58,17 +38,14 @@ def rewrite(text, style):
         name = random.choice(RANDOM_NAMES)
         return f"{scrambled}\n# And I love {name}"
 
-
 # ====== Ready ======
 @client.event
 async def on_ready():
     print(f"Bot online as {client.user} ✅")
 
-
 # ====== Message Handler ======
 @client.event
 async def on_message(message):
-
     if message.author.bot:
         return
 
@@ -79,39 +56,46 @@ async def on_message(message):
     if re.search(r"(https?://\S+)", message.content):
         return
 
-    user_id = message.author.id
-    style = USER_STYLES.get(user_id, "default")
+    # Only trigger quoting if this message is a reply and starts with !quote
+    if message.reference and message.content.startswith("!quote"):
+        try:
+            # Fetch the original message being replied to
+            original = await message.channel.fetch_message(message.reference.message_id)
+        except (discord.NotFound, discord.Forbidden):
+            return
 
-    modified = rewrite(message.content, style)
+        # Determine style using the original author
+        style = USER_STYLES.get(original.author.id, "default")
 
-    # Get / create webhook
-    webhooks = await message.channel.webhooks()
-    webhook = None
+        # Rewrite the original message
+        modified = rewrite(original.content, style)
 
-    for wh in webhooks:
-        if wh.user == client.user:
-            webhook = wh
-            break
+        # Get or create webhook
+        webhooks = await message.channel.webhooks()
+        webhook = None
+        for wh in webhooks:
+            if wh.user == client.user:
+                webhook = wh
+                break
+        if webhook is None:
+            webhook = await message.channel.create_webhook(name="Mimic Bot")
 
-    if webhook is None:
-        webhook = await message.channel.create_webhook(name="Mimic Bot")
+        # Send rewritten message as a reply
+        await webhook.send(
+            content=modified,
+            username=original.author.display_name,
+            avatar_url=original.author.display_avatar.url,
+            reference=original,  # make it look like a reply
+            mention_author=False
+        )
 
-    # Send as reply
-    await webhook.send(
-    content=modified,
-    username=message.author.display_name,
-    avatar_url=message.author.display_avatar.url
-)
-
-
-    # Delete original
-    try:
-        await message.delete()
-    except discord.Forbidden:
-        pass
-    except discord.NotFound:
-        pass
-
+        # Optionally delete the command message (!quote)
+        try:
+            await message.delete()
+        except discord.Forbidden:
+            pass
+        except discord.NotFound:
+            pass
 
 # ====== Run ======
 client.run(TOKEN)
