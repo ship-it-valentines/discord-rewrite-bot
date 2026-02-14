@@ -15,7 +15,7 @@ intents.messages = True
 
 client = discord.Client(intents=intents)
 
-RANDOM_WORDS = [
+RANDOM_NAMES = [
     "Rei",
     "Ety",
     "Pland",
