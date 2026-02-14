@@ -4,7 +4,7 @@ import re
 import random
 
 # ====== Token ======
-TOKEN = os.getenv("TOKEN")
+TOKEN = os.getenv("DISCORD_TOKEN")
 if not TOKEN:
     raise ValueError("DISCORD_TOKEN environment variable is not set!")
 
@@ -50,10 +50,11 @@ async def on_message(message):
     if re.search(r"(https?://\S+)", message.content):
         return
 
+    # Get style and scrambled content
     style = USER_STYLES.get(message.author.id, "default")
     modified_content = rewrite(message.content, style)
 
-    # ====== Webhook ======
+    # ====== Webhook handling ======
     webhooks = await message.channel.webhooks()
     webhook = None
     for wh in webhooks:
@@ -63,22 +64,24 @@ async def on_message(message):
     if webhook is None:
         webhook = await message.channel.create_webhook(name="Mimic Bot")
 
-    # ====== Handle reply safely ======
-    reference = None
+    # ====== Reply simulation ======
     if message.reference and isinstance(message.reference.resolved, discord.Message):
-        reference = message.reference.resolved
+        replied_msg = message.reference.resolved
+        # Quote the original message to simulate a reply
+        quote = f"> {replied_msg.content}\n"
+        modified_content = quote + modified_content
 
+    # ====== Send message via webhook ======
     try:
         await webhook.send(
             content=modified_content,
             username=message.author.display_name,
             avatar_url=message.author.display_avatar.url,
-            allowed_mentions=discord.AllowedMentions.none(),
-            reference=reference  # only set if safe
+            allowed_mentions=discord.AllowedMentions.none()
         )
     except Exception as e:
         print(f"Webhook send failed: {e}")
-        # fallback: send without reference
+        # fallback: send without any reference/quote
         await webhook.send(
             content=modified_content,
             username=message.author.display_name,
@@ -86,11 +89,11 @@ async def on_message(message):
             allowed_mentions=discord.AllowedMentions.none()
         )
 
-    # Delete original message
+    # ====== Delete original message ======
     try:
         await message.delete()
     except (discord.Forbidden, discord.NotFound):
         pass
 
-# ====== Run ======
+# ====== Run Bot ======
 client.run(TOKEN)
