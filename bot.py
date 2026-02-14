@@ -4,7 +4,7 @@ import re
 import random
 
 # ====== Token ======
-TOKEN = os.getenv("DISCORD_TOKEN")
+TOKEN = os.getenv("TOKEN")
 if not TOKEN:
     raise ValueError("DISCORD_TOKEN environment variable is not set!")
 
@@ -64,12 +64,21 @@ async def on_message(message):
     if webhook is None:
         webhook = await message.channel.create_webhook(name="Mimic Bot")
 
-    # ====== Reply simulation ======
+    # ====== Reply simulation with neat quote ======
     if message.reference and isinstance(message.reference.resolved, discord.Message):
         replied_msg = message.reference.resolved
-        # Quote the original message to simulate a reply
-        quote = f"> {replied_msg.content}\n"
-        modified_content = quote + modified_content
+        replied_author = replied_msg.author
+        mention = f"<@{replied_author.id}>"
+        
+        # Truncate original message for neatness
+        original_text = replied_msg.content
+        if len(original_text) > 200:
+            original_text = original_text[:200] + "..."
+        
+        # Make a clean blockquote
+        quote_lines = [f"> {line}" for line in original_text.splitlines()]
+        quote_text = "\n".join(quote_lines)
+        modified_content = f"{mention} | {replied_author.display_name} said:\n{quote_text}\n{modified_content}"
 
     # ====== Send message via webhook ======
     try:
@@ -81,7 +90,7 @@ async def on_message(message):
         )
     except Exception as e:
         print(f"Webhook send failed: {e}")
-        # fallback: send without any reference/quote
+        # fallback: send without quote
         await webhook.send(
             content=modified_content,
             username=message.author.display_name,
