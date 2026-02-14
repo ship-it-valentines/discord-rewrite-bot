@@ -3,7 +3,7 @@ import os
 import asyncio
 
 # ======= Environment Variable =======
-TOKEN = os.getenv("DISCORD_TOKEN")  # Must match Railway variable
+TOKEN = os.getenv("TOKEN")  # Must match Railway variable
 
 if TOKEN is None:
     raise ValueError("DISCORD_TOKEN environment variable not set!")
