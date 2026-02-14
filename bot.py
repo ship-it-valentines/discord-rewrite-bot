@@ -56,7 +56,7 @@ def rewrite(text, style):
 
     if style == "amazeorbs":
         # Scramble text and add fixed message
-        return "".join(random.choice([c.upper(), c.lower()]) for c in text) + "\n# AND I LOVE amazeorbs <:amazeorbs:1461475552736182344><:amazeorbs:1341010944536608799>"
+        return "".join(random.choice([c.upper(), c.lower()]) for c in text) + "\n# and I love amazeorbs <:amazeorbs:1461475552736182344>"
 
     else:
         # 1. Scramble text
