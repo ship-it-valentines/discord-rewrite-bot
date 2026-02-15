@@ -37,8 +37,9 @@ def rewrite(text, style):
 # ====== Ready ======
 @client.event
 async def on_ready():
-    await tree.sync()  # Sync commands
-    print(f"Bot online as {client.user} ✅")
+    # Global command sync (works in servers, DMs, group DMs)
+    await tree.sync()
+    print(f"Bot online as {client.user} ✅ Global commands synced")
 
 # ====== Slash Command ======
 @tree.command(name="mimic", description="Scramble a message in your style")
@@ -46,9 +47,8 @@ async def mimic(interaction: discord.Interaction, text: str):
     style = USER_STYLES.get(interaction.user.id, "default")
     scrambled_text = rewrite(text, style)
 
-    # Check if this is in a guild
+    # ====== If in a server, use webhook mimic ======
     if interaction.guild:
-        # Try to use webhook to mimic user if possible
         webhooks = await interaction.channel.webhooks()
         webhook = None
         for wh in webhooks:
@@ -64,9 +64,11 @@ async def mimic(interaction: discord.Interaction, text: str):
             avatar_url=interaction.user.display_avatar.url,
             allowed_mentions=discord.AllowedMentions.none()
         )
+
+        # Acknowledge the command without spamming
         await interaction.response.send_message("✅ Message sent!", ephemeral=True)
     else:
-        # DM or group DM: just send normally
+        # ====== DM or group DM fallback ======
         await interaction.response.send_message(scrambled_text)
 
 # ====== Run Bot ======
