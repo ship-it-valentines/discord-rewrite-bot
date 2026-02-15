@@ -29,7 +29,6 @@ USER_STYLES = {
 # ====== Rewrite Engine ======
 def rewrite(text, style):
     scrambled = "".join(random.choice([c.upper(), c.lower()]) for c in text)
-
     if style == "amazeorbs":
         return f"{scrambled}\n# and I love amazeorbs <:amazeorbs:1461475552736182344>"
     else:
@@ -44,56 +43,74 @@ async def on_ready():
 # ====== Message Handler ======
 @client.event
 async def on_message(message):
-
-    # Ignore bots (including itself)
     if message.author.bot:
         return
-
-    # Ignore empty messages
     if not message.content:
         return
-
-    # Ignore links
     if re.search(r"(https?://\S+)", message.content):
         return
 
-    # Get user style
+    # ====== Scramble the reply ======
     style = USER_STYLES.get(message.author.id, "default")
     scrambled_text = rewrite(message.content, style)
 
-    # Handle replies (optional)
-    replied_msg = None
-
-    if message.reference and isinstance(message.reference.resolved, discord.Message):
-        replied_msg = message.reference.resolved
-
+    # ====== Handle replied message ======
+    replied_msg = message.reference.resolved if message.reference and isinstance(message.reference.resolved, discord.Message) else None
+    embed = None
     if replied_msg:
-        original_text = replied_msg.content.splitlines()[0] if replied_msg.content else ""
-
+        replied_author = replied_msg.author
+        original_text = str(replied_msg.content).splitlines()[0] if replied_msg.content else ""
         if len(original_text) > 200:
             original_text = original_text[:200] + "..."
-
         embed = discord.Embed(
             description=original_text,
             color=discord.Color.blurple()
         )
-
         embed.set_author(
-            name=f"{replied_msg.author.display_name} said:",
-            icon_url=replied_msg.author.display_avatar.url
+            name=f"{replied_author.display_name} said:",
+            icon_url=replied_author.display_avatar.url
         )
 
-        await message.channel.send(embed=embed)
+    # ====== Check if message is in a guild ======
+    if message.guild:
+        # ====== Webhook handling in server ======
+        webhooks = await message.channel.webhooks()
+        webhook = None
+        for wh in webhooks:
+            if wh.user == client.user:
+                webhook = wh
+                break
+        if webhook is None:
+            webhook = await message.channel.create_webhook(name="Mimic Bot")
 
-    # Send rewritten message
-    await message.channel.send(scrambled_text)
+        # Send embed first if it exists
+        if embed:
+            await webhook.send(
+                embed=embed,
+                username=message.author.display_name,
+                avatar_url=message.author.display_avatar.url,
+                allowed_mentions=discord.AllowedMentions.none()
+            )
 
-    # Try to delete original message (works in servers, fails in DMs)
-    try:
-        await message.delete()
-    except (discord.Forbidden, discord.NotFound):
-        pass
+        # Send scrambled text
+        await webhook.send(
+            content=scrambled_text,
+            username=message.author.display_name,
+            avatar_url=message.author.display_avatar.url,
+            allowed_mentions=discord.AllowedMentions.none()
+        )
 
+        # Delete original message
+        try:
+            await message.delete()
+        except (discord.Forbidden, discord.NotFound):
+            pass
+    else:
+        # ====== DM fallback ======
+        # Send embed first if exists
+        if embed:
+            await message.channel.send(embed=embed)
+        await message.channel.send(scrambled_text)
 
 # ====== Run Bot ======
 client.run(TOKEN)
