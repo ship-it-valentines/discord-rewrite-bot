@@ -1,6 +1,5 @@
 import discord
 import os
-import re
 import random
 
 # ====== Token ======
@@ -10,8 +9,8 @@ if not TOKEN:
 
 # ====== Intents ======
 intents = discord.Intents.default()
-intents.message_content = True
 client = discord.Client(intents=intents)
+tree = discord.app_commands.CommandTree(client)
 
 # ====== Random Names ======
 RANDOM_NAMES = [
@@ -38,79 +37,37 @@ def rewrite(text, style):
 # ====== Ready ======
 @client.event
 async def on_ready():
+    await tree.sync()  # Sync commands
     print(f"Bot online as {client.user} ✅")
 
-# ====== Message Handler ======
-@client.event
-async def on_message(message):
-    if message.author.bot:
-        return
-    if not message.content:
-        return
-    if re.search(r"(https?://\S+)", message.content):
-        return
+# ====== Slash Command ======
+@tree.command(name="mimic", description="Scramble a message in your style")
+async def mimic(interaction: discord.Interaction, text: str):
+    style = USER_STYLES.get(interaction.user.id, "default")
+    scrambled_text = rewrite(text, style)
 
-    # ====== Scramble the reply ======
-    style = USER_STYLES.get(message.author.id, "default")
-    scrambled_text = rewrite(message.content, style)
-
-    # ====== Handle replied message ======
-    replied_msg = message.reference.resolved if message.reference and isinstance(message.reference.resolved, discord.Message) else None
-    embed = None
-    if replied_msg:
-        replied_author = replied_msg.author
-        original_text = str(replied_msg.content).splitlines()[0] if replied_msg.content else ""
-        if len(original_text) > 200:
-            original_text = original_text[:200] + "..."
-        embed = discord.Embed(
-            description=original_text,
-            color=discord.Color.blurple()
-        )
-        embed.set_author(
-            name=f"{replied_author.display_name} said:",
-            icon_url=replied_author.display_avatar.url
-        )
-
-    # ====== Check if message is in a guild ======
-    if message.guild:
-        # ====== Webhook handling in server ======
-        webhooks = await message.channel.webhooks()
+    # Check if this is in a guild
+    if interaction.guild:
+        # Try to use webhook to mimic user if possible
+        webhooks = await interaction.channel.webhooks()
         webhook = None
         for wh in webhooks:
             if wh.user == client.user:
                 webhook = wh
                 break
         if webhook is None:
-            webhook = await message.channel.create_webhook(name="Mimic Bot")
+            webhook = await interaction.channel.create_webhook(name="Mimic Bot")
 
-        # Send embed first if it exists
-        if embed:
-            await webhook.send(
-                embed=embed,
-                username=message.author.display_name,
-                avatar_url=message.author.display_avatar.url,
-                allowed_mentions=discord.AllowedMentions.none()
-            )
-
-        # Send scrambled text
         await webhook.send(
             content=scrambled_text,
-            username=message.author.display_name,
-            avatar_url=message.author.display_avatar.url,
+            username=interaction.user.display_name,
+            avatar_url=interaction.user.display_avatar.url,
             allowed_mentions=discord.AllowedMentions.none()
         )
-
-        # Delete original message
-        try:
-            await message.delete()
-        except (discord.Forbidden, discord.NotFound):
-            pass
+        await interaction.response.send_message("✅ Message sent!", ephemeral=True)
     else:
-        # ====== DM fallback ======
-        # Send embed first if exists
-        if embed:
-            await message.channel.send(embed=embed)
-        await message.channel.send(scrambled_text)
+        # DM or group DM: just send normally
+        await interaction.response.send_message(scrambled_text)
 
 # ====== Run Bot ======
 client.run(TOKEN)
