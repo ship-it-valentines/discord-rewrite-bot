@@ -1,7 +1,7 @@
 import discord
 import os
-import random
 import re
+import random
 
 # ====== Token ======
 TOKEN = os.getenv("TOKEN")
@@ -29,6 +29,7 @@ USER_STYLES = {
 # ====== Rewrite Engine ======
 def rewrite(text, style):
     scrambled = "".join(random.choice([c.upper(), c.lower()]) for c in text)
+
     if style == "amazeorbs":
         return f"{scrambled}\n# and I love amazeorbs <:amazeorbs:1461475552736182344>"
     else:
@@ -43,42 +44,56 @@ async def on_ready():
 # ====== Message Handler ======
 @client.event
 async def on_message(message):
-    # Ignore messages from bots (including itself)
+
+    # Ignore bots (including itself)
     if message.author.bot:
         return
+
+    # Ignore empty messages
     if not message.content:
         return
+
+    # Ignore links
     if re.search(r"(https?://\S+)", message.content):
         return
 
-    # Determine style
+    # Get user style
     style = USER_STYLES.get(message.author.id, "default")
     scrambled_text = rewrite(message.content, style)
 
-    # If replying to a message, include first line in an embed
-    replied_msg = message.reference.resolved if message.reference and isinstance(message.reference.resolved, discord.Message) else None
+    # Handle replies (optional)
+    replied_msg = None
+
+    if message.reference and isinstance(message.reference.resolved, discord.Message):
+        replied_msg = message.reference.resolved
+
     if replied_msg:
-        original_text = str(replied_msg.content).splitlines()[0] if replied_msg.content else ""
+        original_text = replied_msg.content.splitlines()[0] if replied_msg.content else ""
+
         if len(original_text) > 200:
             original_text = original_text[:200] + "..."
+
         embed = discord.Embed(
             description=original_text,
             color=discord.Color.blurple()
         )
+
         embed.set_author(
             name=f"{replied_msg.author.display_name} said:",
             icon_url=replied_msg.author.display_avatar.url
         )
+
         await message.channel.send(embed=embed)
 
-    # Send the scrambled message normally (bot username/avatar)
+    # Send rewritten message
     await message.channel.send(scrambled_text)
 
-    # Optionally delete original message
+    # Try to delete original message (works in servers, fails in DMs)
     try:
         await message.delete()
     except (discord.Forbidden, discord.NotFound):
         pass
+
 
 # ====== Run Bot ======
 client.run(TOKEN)
